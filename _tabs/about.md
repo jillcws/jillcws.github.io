@@ -3,6 +3,32 @@
 icon: fas fa-info-circle
 order: 4
 ---
+關於
+Hi！我是 Jill 👋
+這裡是我記錄技術學習與生活點滴的地方。
 
-> Add Markdown syntax content to file `_tabs/about.md`{: .filepath } and it will show up on this page.
-{: .prompt-tip }
+💻 技術背景
+我是一名軟體工程師，熱愛程式開發和技術分享：
+
+技能專長
+程式技術：Python、Java、Flutter
+開發工具：Git、n8n、GCP
+其他：技術文件撰寫
+
+主要專注於App開發和效能優化。我相信技術是解決問題的工具，每次克服挑戰都讓我更熱愛這個領域。
+目前正在學習Flutter 和 AI 相關技術。
+
+📝 關於這個部落格
+
+這裡主要分享：
+技術筆記：開發心得與學習記錄
+問題解決：Bug 追蹤與解決方案
+工具推薦：好用的開發工具和資源
+生活隨筆：偶爾的攝影作品和生活感想
+
+希望透過分享幫助到有相同困惑的朋友，也讓自己的學習更有系統。
+🌱 個人小語
+
+"Code with purpose, live with passion."
+
+我相信持續學習、樂於分享，技術之外也要保持對生活的熱愛。
