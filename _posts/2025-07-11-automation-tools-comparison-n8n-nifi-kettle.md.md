@@ -3,8 +3,6 @@ title: "自動化工具大比拼：n8n、Apache NiFi、Pentaho Kettle 選擇指�
 date: 2025-07-11 10:00:00 +0800
 categories: [技術比較, 自動化工具]
 tags: [n8n, nifi, kettle, etl, 自動化, 工具選型]
-image:
-  alt: 自動化工具比較
 pin: false
 ---
 

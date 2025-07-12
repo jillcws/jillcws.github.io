@@ -1,11 +1,11 @@
 ---
-title: "n8n 實戰：用 No-Code 打造 LineBot 讀經進度查詢機器人"
+title: "n8n 實戰：用 No-Code 打造Excel查詢機器人"
 date: 2025-07-11 14:30:00 +0800
 categories: [實作教學, n8n]
-tags: [n8n, linebot, 實戰教學, webhook, 自動化實作]
+tags: [n8n, webhook, 自動化實作]
 image:
-  path: /assets/img/posts/n8n-linebot-tutorial.jpeg
-  alt: n8n LineBot 實戰教學
+  path: /assets/img/posts/n8n-webhook.jpeg
+  alt: n8n 實戰
 pin: true
 ---
 
@@ -13,99 +13,10 @@ pin: true
 
 最近把之前用傳統後端架設的 LineBot 讀經進度查詢機器人遷移到 n8n 平台，整個過程讓我深刻體會到 no-code 工具的威力！從原本需要 2-3 天的開發時間，縮短到半天就能完成部署。
 
-今天想和大家分享完整的實作過程，包括詳細的設定步驟和一些實用的資源捷徑 🛠️
+Excel 的資料是先前已經整理過的，這次目的是透過 n8n 結合多個 AI Agent 分析字句後到 Excel 中取得符合條件的資料。今天想和大家分享完整的實作過程，包括 AI Agent 角色設定與工作流程設計 🛠️
 
-> 本文提供完整的實作指南，適合想要學習 n8n 和 LineBot 整合的朋友！
+> 本文提供完整的實作指南，適合想要學習 n8n 的朋友！
 {: .prompt-info }
-
-## n8n 實際工作流程架構
-
-### 完整流程圖解析
-
-根據我在 n8n 中建立的實際工作流程，整個系統的架構如下：
-
-![n8n LineBot 工作流程](/assets/img/posts/n8n-webhook.jpeg)
-*實際的 n8n 工作流程圖*
-
-### 流程節點詳細說明
-
-#### **1. 訊息接收階段**
-- **When chat message received (Deactivated)**：處理 LINE Webhook 訊息
-- **專案設計**：負責接收並解析來自 LINE 的用戶訊息
-
-#### **2. AI 智能處理核心**
-整個流程的核心是多層 AI 處理架構：
-
-**Anthropic Chat Model（主要 AI 引擎）**
-- 使用 Claude AI 進行自然語言理解
-- 取代過去容易出錯的自然語言套件
-- 負責理解用戶的查經需求和意圖
-
-**Anthropic Chat(Simple Memory) Model**
-- 提供對話記憶功能
-- 讓查經助手能記住對話上下文
-- 使互動更自然流暢
-
-**ChatGPT 節點**
-- 作為備用或特定功能的 AI 處理
-- 可能用於不同類型的查經問題
-
-#### **3. 資料處理與記憶管理**
-**Simple Memory 節點**
-- 儲存對話歷史和用戶偏好
-- 記錄查經進度和習慣
-
-**JMESPath-NodeSplit 節點**
-- 處理 JSON 資料的解析和轉換
-- 確保資料格式正確傳遞
-
-#### **4. 條件判斷與分流**
-**篩選資料節點**
-- 根據 AI 理解的結果進行條件判斷
-- 決定後續的處理路徑
-
-**篩選器件**
-- 進一步的條件篩選
-- 確保回應的準確性
-
-#### **5. 回應生成與發送**
-**Code 節點**
-- 最終的回應格式化
-- 將 AI 生成的內容轉換為 LINE 訊息格式
-
-**第一欄**
-- 可能是最終的訊息輸出節點
-- 負責將處理結果發送回 LINE
-
-### 架構設計亮點
-
-#### **1. 多 AI 模型協作**
-這個設計最大的特色是使用了多個 AI 模型：
-- **Anthropic Claude**：主要的語言理解引擎
-- **Simple Memory**：提供上下文記憶能力
-
-#### **2. 記憶機制設計**
-- **Simple Memory** 節點讓機器人能記住對話歷史
-- 使用者不需要重複說明背景
-- 提供更個人化的查經建議
-
-#### **3. 分層處理邏輯**
-```mermaid
-graph TD
-    A[LINE 訊息] --> B[AI 理解意圖]
-    B --> C{條件判斷}
-    C -->|進度查詢| E[資料庫查詢]
-    C -->|一般對話| F[簡單回應]
-    E --> G[記憶儲存]
-    F --> G
-    G --> H[格式化回應]
-    H --> I[發送到 LINE]
-```
-
-#### **4. 容錯與分流設計**
-- 多個篩選節點確保資料正確性
-- AI 處理失敗時有備用路徑
-- 記憶功能出錯不影響基本查經功能
 
 ### 與傳統架構的對比
 
@@ -117,317 +28,260 @@ graph TD
 | **擴展性**   | 需要重新部署             | 拖拉節點即可           |
 | **維護性**   | 需要程式知識             | 視覺化調整             |
 
+
+
+## n8n 實際工作流程架構
+
+### 完整流程圖解析
+
+根據我在 n8n 中建立的實際工作流程，整個系統採用了智能分流的架構設計：
+
+![n8n LineBot 工作流程](/assets/img/posts/n8n-webhook.jpg)
+*實際的 n8n 工作流程圖*
+
+### 核心工作流程
+
+**1. 訊息接收階段**
+- **Webhook 觸發器**：接收來自 LINE Bot 的訊息
+- **訊息預處理**：透過 `Edit Fields` 節點格式化輸入資料
+
+**2. 智能意圖識別**
+- **第一個 AI Agent**：使用 Anthropic Claude 進行語意分析
+- 判斷使用者意圖是「查詢資料」或「閒聊對話」
+- 透過 `IF` 條件節點進行智能分流
+
+**3. 雙軌處理機制**
+
+**路徑 A：閒聊對話處理**
+- **第二個 AI Agent**：專責聊天回應
+- 使用 `Simple Memory` 節點維護對話記憶
+- 提供自然的聊天互動體驗
+
+**路徑 B：資料查詢處理**
+- **第三個 AI Agent**：分析查詢需求的完整性
+- **條件判斷**：確認使用者是否已提供完整查詢資訊
+- **Excel 資料查詢**：透過 `Query Reading` 節點從 Excel 檔案中搜尋符合條件的資料
+- **資料過濾**：使用 `Filter` 節點篩選結果
+
+**4. 統一回應**
+- 所有處理路徑最終匯聚到 `chatBot` 節點
+- 透過 `Respond to Webhook` 節點統一回應給 LINE Bot
+
 ## 實作步驟詳解
 
 ### 步驟 1：n8n 環境準備
 
-**Docker 快速部署：**
-```bash
-# 建立 docker-compose.yml
-version: '3.8'
-services:
-  n8n:
-    image: n8nio/n8n
-    restart: always
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=your_password
-      - WEBHOOK_URL=https://your-domain.com
-    volumes:
-      - n8n_data:/home/node/.n8n
+**Zeabur 快速部署：[點擊連結](https://zeabur.com/referral?referralCode=sheentrailstudio)**
 
-volumes:
-  n8n_data:
-```
+在模板輸入關鍵字：n8n -> 直接使用五倍學院
+![](/assets/img/posts/zeabur.jpg)
 
-```bash
-# 啟動服務
-docker-compose up -d
+輸入 domain 名字，等等透過這條網址編輯 n8n
+![](/assets/img/posts/zeabur1.jpg)
 
-# 檢查狀態
-docker-compose logs n8n
-```
+建置完覺得想用 redis，在這邊按下『＋』
+![](/assets/img/posts/zeabur_redis.jpg)
 
-> **安全提醒**：記得設定強密碼並使用 HTTPS！
-{: .prompt-warning }
+選擇 Redis
+![](/assets/img/posts/zeabur_redis2.jpg)
 
-## 關鍵實作細節
+大功告成
+![](/assets/img/posts/zeabur_redis2.jpg)
 
-### AI Agent 配置重點
+### 步驟 2：Webhook 設定
 
-基於實際的工作流程，這裡分享一些關鍵的配置細節：
+1. 在 n8n 中建立新的 Workflow
+2. 添加 `Webhook` 觸發節點
+3. 設定 HTTP 方法為 `POST`
+4. 複製 Webhook URL，稍後將用於 LINE Bot 設定
 
-#### **1. Anthropic Claude 配置**
-```javascript
-// AI 提示詞設計（在 Anthropic Chat Model 節點中）
-const systemPrompt = `
-你是一個專業的查經助手，具備以下能力：
-1. 理解用戶的查經需求和問題
-2. 提供準確的聖經解釋和背景知識
-3. 記住對話歷史，提供連貫的建議
-4. 用溫暖、鼓勵的語調回應
+### 步驟 3：AI Agent 配置
 
-請根據用戶的問題，提供有幫助的查經指導。
-`;
+#### **AI Agent 1：意圖識別專家**
 
-// 用戶訊息處理
-const userMessage = $node["When chat message received"].json.message.text;
-```
-
-#### **2. Simple Memory 記憶機制**
-```javascript
-// 在 Simple Memory 節點中儲存對話歷史
-const conversationHistory = {
-  userId: $node["When chat message received"].json.source.userId,
-  timestamp: new Date().toISOString(),
-  userMessage: userMessage,
-  aiResponse: aiGeneratedResponse,
-  context: {
-    currentStudyTopic: extractedTopic,
-    userPreferences: userPrefs
-  }
-};
-
-// 儲存到記憶中
-$memory.set(`conversation_${userId}`, conversationHistory);
-```
-
-#### **3. 條件分流邏輯**
-在篩選節點中的判斷邏輯：
+負責分析使用者訊息，判斷是「查詢讀經進度」還是「閒聊對話」。
 
 ```javascript
-// 根據 AI 理解的意圖進行分流
-const aiResponse = $node["Anthropic Chat Model"].json;
-const intent = aiResponse.intent || "general";
+// 在 Anthropic Chat Model 節點中的系統提示詞
+const systemMessage = `
+你是意圖識別專家，專門分析用戶對話的真實意圖。
 
-// 分流邏輯
-if (intent.includes("查經問題")) {
-  return [{ json: { route: "study", data: aiResponse } }];
-} else if (intent.includes("進度查詢")) {
-  return [{ json: { route: "progress", data: aiResponse } }];
-} else {
-  return [{ json: { route: "general", data: aiResponse } }];
-}
-```
+# 任務
+分析用戶訊息，判斷是「查詢讀經進度」還是「閒聊對話」。
 
-### 錯誤處理與容錯設計
+# 識別標準
 
-#### **多層容錯機制**
-1. **AI 服務失敗**：自動切換到備用 AI 模型
-2. **記憶功能異常**：不影響基本查經功能
-3. **資料格式錯誤**：JMESPath 節點進行資料清洗
-4. **網路問題**：內建重試機制
+## 🔍 查詢讀經進度
+- 包含日期：今天、明天、04/29、4月29日、昨天等
+- 包含讀經關鍵字：進度、讀經、聖經、經文
+- 包含計劃名稱：一年讀經、三年讀經、聖經旅行團
+- 包含查詢詞：查詢、查、找、要、需要
+- 包含範圍詞：全部、所有、整個
 
-#### **監控與除錯**
-```javascript
-// 在關鍵節點添加日誌
-console.log("AI處理結果:", {
-  timestamp: new Date().toISOString(),
-  userId: userId,
-  intent: extractedIntent,
-  confidence: confidenceScore,
-  processingTime: Date.now() - startTime
-});
-```
+## 💬 閒聊對話
+- 問候語：你好、嗨、早安、午安、晚安、安安
+- 關懷話語：你好嗎、最近如何、身體健康嗎
+- 感謝話語：謝謝、感恩、讚美主、感謝神
+- 分享心情：今天很開心、心情不錯、感謝主
+- 功能詢問：你能做什麼、怎麼使用、有什麼功能
+- 一般對話：沒什麼、隨便聊聊、無聊
 
-### 步驟 3：n8n Workflow 建構
+# 輸出格式
 
-#### 3.1 Webhook 接收節點
-
-```json
+## 查詢讀經進度
 {
-  "httpMethod": "POST",
-  "path": "linebot",
-  "responseMode": "responseNode",
-  "options": {}
+  "intent": "query_reading",
+  "confidence": 0.9,
+  "userMessage": "用戶原始訊息"
 }
+
+## 閒聊對話
+{
+  "intent": "casual_chat",
+  "confidence": 0.95,
+  "chatType": "greeting|care|thanks|sharing|help|general",
+  "userMessage": "用戶原始訊息"
+}
+
+請分析用戶訊息，只輸出JSON格式，不要其他內容。
+`;
 ```
 
-#### 3.2 訊息解析節點 (Code Node)
+#### **AI Agent 2：聊天機器人**
+
+專門處理閒聊對話，提供溫暖的互動體驗。
 
 ```javascript
-// 解析 LINE Webhook 資料
-const body = $node["Webhook"].json["body"];
-const events = body.events;
+const chatSystemMessage = `
+你是一個溫暖友善的讀經助手機器人，專門陪伴使用者聊天。
 
-if (!events || events.length === 0) {
-  return [];
-}
+# 角色特點
+- 溫暖、友善、有同理心
+- 具有基督教背景知識
+- 善於傾聽並給予適當回應
+- 會適時關懷使用者的靈性生活
 
-const event = events[0];
-const messageText = event.message?.text || "";
-const replyToken = event.replyToken;
-const userId = event.source.userId;
+# 回應原則
+- 保持簡潔，約50字以內
+- 語氣親切自然
+- 可以適時分享聖經金句
+- 避免說教，重點在陪伴
 
-// 判斷查詢類型
-let queryType = "unknown";
-if (messageText.includes("今日") || messageText.includes("today")) {
-  queryType = "daily";
-} else if (messageText.includes("本週") || messageText.includes("week")) {
-  queryType = "weekly";
-} else if (messageText.includes("進度") || messageText.includes("progress")) {
-  queryType = "progress";
-}
-
-return [{
-  json: {
-    replyToken,
-    userId,
-    messageText,
-    queryType,
-    timestamp: new Date().toISOString()
-  }
-}];
+請根據使用者的訊息給予適當回應。
+`;
 ```
 
-#### 3.3 資料庫查詢節點
+#### **AI Agent 3：查詢需求分析師**
 
-**如果使用外部資料庫：**
+分析使用者的查詢需求是否完整，並提取查詢條件。
+
 ```javascript
-// 根據查詢類型執行不同的資料庫查詢
-const { queryType, userId } = $node["Parse Message"].json;
+const queryAnalysisMessage = `
+你是查詢需求分析專家，負責分析使用者的讀經進度查詢需求。
 
-let query = "";
-let responseData = {};
+# 任務
+分析使用者訊息，判斷查詢資訊是否完整，並提取查詢條件。
 
-switch (queryType) {
-  case "daily":
-    // 查詢今日讀經進度
-    query = `SELECT * FROM reading_progress 
-             WHERE user_id = '${userId}' 
-             AND date = CURDATE()`;
-    break;
-    
-  case "weekly":
-    // 查詢本週讀經進度
-    query = `SELECT * FROM reading_progress 
-             WHERE user_id = '${userId}' 
-             AND YEARWEEK(date) = YEARWEEK(NOW())`;
-    break;
-    
-  case "progress":
-    // 查詢整體進度
-    query = `SELECT COUNT(*) as completed,
-             (SELECT COUNT(*) FROM reading_plan) as total
-             FROM reading_progress 
-             WHERE user_id = '${userId}'`;
-    break;
-    
-  default:
-    responseData = {
-      text: "請輸入有效的查詢指令：\n• 今日進度\n• 本週進度\n• 整體進度"
-    };
+# 必要資訊
+- 日期：今天、明天、具體日期等
+- 計劃類型：一年讀經、三年讀經等（可選）
+
+# 輸出格式
+
+## 資訊完整
+{
+  "status": "complete",
+  "date": "2025-07-12",
+  "plan": "一年讀經",
+  "query": "formatted query for Excel"
 }
 
-return [{ json: { query, responseData, queryType } }];
-```
-
-#### 3.4 回應格式化節點
-
-```javascript
-// 格式化 LINE 回應訊息
-const { queryType, responseData } = $node["Database Query"].json;
-const replyToken = $node["Parse Message"].json.replyToken;
-
-let replyMessage = {};
-
-switch (queryType) {
-  case "daily":
-    replyMessage = {
-      type: "text",
-      text: `📖 今日讀經進度\n\n` +
-            `📚 已完成：${responseData.completed || 0} 章\n` +
-            `⏰ 更新時間：${new Date().toLocaleString('zh-TW')}\n\n` +
-            `💪 繼續加油！`
-    };
-    break;
-    
-  case "weekly":
-    replyMessage = {
-      type: "text", 
-      text: `📅 本週讀經進度\n\n` +
-            `📊 本週完成：${responseData.weeklyTotal || 0} 章\n` +
-            `🎯 週目標：7 章\n` +
-            `📈 完成率：${Math.round((responseData.weeklyTotal || 0) / 7 * 100)}%\n\n` +
-            `${responseData.weeklyTotal >= 7 ? '🎉 本週目標達成！' : '💪 繼續努力！'}`
-    };
-    break;
-    
-  case "progress":
-    const percentage = Math.round((responseData.completed / responseData.total) * 100);
-    replyMessage = {
-      type: "text",
-      text: `📊 整體讀經進度\n\n` +
-            `✅ 已完成：${responseData.completed} 章\n` +
-            `📖 總計：${responseData.total} 章\n` +
-            `📈 完成率：${percentage}%\n\n` +
-            `${'▓'.repeat(Math.floor(percentage/10))}${'░'.repeat(10-Math.floor(percentage/10))} ${percentage}%\n\n` +
-            `🙏 感謝主的帶領！`
-    };
-    break;
-    
-  default:
-    replyMessage = responseData;
+## 資訊不完整
+{
+  "status": "incomplete",
+  "missing": "date|plan",
+  "question": "請問您想查詢哪一天的讀經進度呢？"
 }
 
-return [{
-  json: {
-    replyToken,
-    messages: [replyMessage]
-  }
-}];
+請分析使用者訊息，只輸出JSON格式。
+`;
 ```
 
-#### 3.5 LINE Reply 節點
+### 步驟 4：條件分流邏輯
+
+在 `IF` 節點中設定條件判斷：
 
 ```javascript
-// 發送回應到 LINE
-const { replyToken, messages } = $node["Format Response"].json;
+// 判斷是否為查詢意圖
+{{ $json.intent === 'query_reading' }}
+```
 
-const replyData = {
-  replyToken: replyToken,
-  messages: messages
+### 步驟 5：Excel 資料查詢
+
+在 `Query Reading` 節點中設定 Excel 查詢邏輯：
+
+```javascript
+// 假設 Excel 檔案結構包含：日期、計劃名稱、經文內容
+const queryConditions = {
+  date: $json.date,
+  plan: $json.plan || '預設計劃'
 };
 
-// 設定 LINE API Headers
-const headers = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${$vars.LINE_CHANNEL_ACCESS_TOKEN}`
-};
-
-return [{
-  json: replyData,
-  headers: headers
-}];
+// 查詢邏輯將根據條件篩選 Excel 資料
 ```
 
-### 步驟 4：錯誤處理與監控
+### 步驟 6：Memory 記憶功能
 
-#### 4.1 錯誤處理流程
+使用 `Simple Memory` 節點維護對話記憶：
 
-```mermaid
-graph TD
-    A[收到訊息] --> B{解析成功?}
-    B -->|是| C[查詢資料庫]
-    B -->|否| D[回傳格式錯誤訊息]
-    C --> E{查詢成功?}
-    E -->|是| F[格式化回應]
-    E -->|否| G[回傳查詢失敗訊息]
-    F --> H[發送 LINE 訊息]
-    G --> H
-    D --> H
-    H --> I[記錄日誌]
-```
+- **Memory Key**: 使用使用者ID作為記憶鍵值
+- **Memory Size**: 設定記憶對話輪數（建議5-10輪）
+- **Memory Type**: 選擇適合的記憶類型
 
-#### 4.2 監控設定
+## 關鍵技術特點
 
-**在 n8n 中設定監控：**
-- **執行歷史**：保留最近 100 次執行記錄
-- **錯誤通知**：設定失敗時發送 Email 通知
-- **效能監控**：記錄每個節點的執行時間
+### 1. 智能分流機制
+透過第一個 AI Agent 準確識別使用者意圖，將不同類型的請求導向專門的處理路徑，提高回應準確性。
 
-> **監控小技巧**：可以在關鍵節點加入 Webhook 通知，即時掌握系統狀況！
+### 2. 專業化 AI Agent
+每個 AI Agent 都有明確的職責分工：
+- **Agent 1**: 意圖識別
+- **Agent 2**: 聊天回應  
+- **Agent 3**: 查詢分析
+
+### 3. 記憶與上下文
+透過 `Simple Memory` 節點，機器人能夠記住對話歷史，提供更自然的互動體驗。
+
+### 4. 容錯處理
+在關鍵節點設置錯誤處理邏輯，確保即使某個環節失敗，也能提供基本的回應。
+
+## 優化建議
+
+### 1. 效能優化
+- 設定 AI Agent 的回應時間限制
+- 使用快取機制減少重複查詢
+- 優化 Excel 檔案結構提高查詢效率
+
+### 2. 使用者體驗
+- 加入 typing indicator 提示
+- 設定預設回應處理異常情況
+- 提供查詢格式說明
+
+### 3. 監控與分析
+- 記錄使用者查詢模式
+- 分析 AI Agent 的準確率
+- 設定告警機制監控系統狀態
+
+
+## 結語
+
+透過 n8n 結合多個 AI Agent 的架構，我們成功打造了一個智能的 Excel 查詢機器人。這個方案不僅大幅縮短了開發時間，還提供了比傳統程式碼更好的可維護性和擴展性。
+
+對於想要入門 no-code 開發的朋友，這個專案是一個很好的起點。透過視覺化的節點配置，即使沒有深厚的程式背景，也能快速建構出功能完整的智能應用。
+
+未來我們還可以進一步擴展功能，比如加入語音回應、圖表生成、或是整合更多的資料源。n8n 的彈性架構讓這些擴展變得輕而易舉。
+
+> 完整的 n8n 工作流程檔案和更多技術細節，歡迎追蹤我的 GitHub 專案！
 {: .prompt-tip }
+
+
