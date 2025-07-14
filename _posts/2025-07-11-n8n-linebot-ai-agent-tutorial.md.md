@@ -73,7 +73,7 @@ Excel 的資料是先前已經整理過的，這次目的是透過 n8n 結合多
 
 **Zeabur 快速部署：[點擊連結](https://zeabur.com/referral?referralCode=sheentrailstudio)**
 
-在模板輸入關鍵字：n8n -> 直接使用五倍學院
+在模板輸入關鍵字：n8n → 直接使用五倍學院
 ![](/assets/img/posts/zeabur.jpg)
 
 輸入 domain 名字，等等透過這條網址編輯 n8n
