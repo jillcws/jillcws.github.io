@@ -4,7 +4,7 @@ date: 2025-07-11 14:30:00 +0800
 categories: [實作教學, n8n]
 tags: [n8n, webhook, 自動化實作]
 image:
-  path: /assets/img/posts/n8n-webhook.jpeg
+  path: /assets/img/posts/n8n-webhook.jpg
   alt: n8n 實戰
 pin: true
 ---
